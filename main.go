@@ -21,9 +21,9 @@ func main() {
 		),
 	)
 
-	sMux.HandleFunc("/healthz", handlerHealth)
-	sMux.HandleFunc("/metrics", apiCfg.handlerHits)
-	sMux.HandleFunc("/reset", apiCfg.handlerReset)
+	sMux.HandleFunc("GET /api/healthz", handlerHealth)
+	sMux.HandleFunc("GET /api/metrics", apiCfg.handlerHits)
+	sMux.HandleFunc("POST /api/reset", apiCfg.handlerReset)
 
 	server := &http.Server{
 		Handler: sMux,
