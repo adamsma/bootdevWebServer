@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 )
 
 func handleValidateChirp(resp http.ResponseWriter, req *http.Request) {
@@ -13,7 +14,7 @@ func handleValidateChirp(resp http.ResponseWriter, req *http.Request) {
 	}
 
 	type returnVal struct {
-		Valid bool `json:"valid"`
+		CleanedBody string `json:"cleaned_body"`
 	}
 
 	decoder := json.NewDecoder(req.Body)
@@ -24,14 +25,27 @@ func handleValidateChirp(resp http.ResponseWriter, req *http.Request) {
 			resp,
 			http.StatusInternalServerError,
 			"Couldn't decode parameters",
-			fmt.Errorf("Error decoding parametesr: %s", err),
+			fmt.Errorf("error decoding parametesr: %s", err),
 		)
 	}
 
 	if len(params.Body) > 140 {
 		respondWithError(resp, http.StatusBadRequest, "Chirp is too long", nil)
+		return
 	}
 
-	respondWithJSON(resp, http.StatusOK, returnVal{Valid: true})
+	words := strings.Split(params.Body, " ")
+	for i, word := range words {
+		switch strings.ToLower(word) {
+		case "kerfuffle", "sharbert", "fornax":
+			words[i] = "****"
+		default:
+			//do nothing
+		}
+	}
+
+	respondWithJSON(
+		resp, http.StatusOK, returnVal{CleanedBody: strings.Join(words, " ")},
+	)
 
 }
