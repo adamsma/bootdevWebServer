@@ -4,10 +4,12 @@ import (
 	"fmt"
 	"net/http"
 	"sync/atomic"
+	"webserver/internal/database"
 )
 
 type apiConfig struct {
 	fileserverHits atomic.Int32
+	db             *database.Queries
 }
 
 func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {

@@ -1,17 +1,36 @@
 package main
 
 import (
+	"database/sql"
 	"log"
 	"net/http"
+	"os"
 	"sync/atomic"
+	"webserver/internal/database"
+
+	"github.com/joho/godotenv"
+	_ "github.com/lib/pq"
 )
 
 func main() {
 
-	const filepathRoot = "."
+	godotenv.Load()
 	const port = "8080"
 
-	apiCfg := apiConfig{fileserverHits: atomic.Int32{}}
+	dbURL := os.Getenv("DB_URL")
+	if dbURL == "" {
+		log.Fatal("DB_URL is missing")
+	}
+
+	dbConn, err := sql.Open("postgres", dbURL)
+	if err != nil {
+		log.Fatalf("error opening database connection: %s", err)
+	}
+
+	apiCfg := apiConfig{
+		fileserverHits: atomic.Int32{},
+		db:             database.New(dbConn),
+	}
 
 	sMux := http.NewServeMux()
 	sMux.Handle(
