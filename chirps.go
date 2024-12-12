@@ -25,8 +25,9 @@ func handleValidateChirp(resp http.ResponseWriter, req *http.Request) {
 			resp,
 			http.StatusInternalServerError,
 			"Couldn't decode parameters",
-			fmt.Errorf("error decoding parametesr: %s", err),
+			fmt.Errorf("error decoding parameters: %s", err),
 		)
+		return
 	}
 
 	if len(params.Body) > 140 {

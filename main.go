@@ -27,9 +27,15 @@ func main() {
 		log.Fatalf("error opening database connection: %s", err)
 	}
 
+	platform := os.Getenv("PLATFORM")
+	if platform == "" {
+		log.Fatal("PLATFORM must be set")
+	}
+
 	apiCfg := apiConfig{
 		fileserverHits: atomic.Int32{},
 		db:             database.New(dbConn),
+		env:            platform,
 	}
 
 	sMux := http.NewServeMux()
@@ -41,9 +47,10 @@ func main() {
 	)
 
 	sMux.HandleFunc("GET /api/healthz", handlerHealth)
+	sMux.HandleFunc("POST /api/validate_chirp", handleValidateChirp)
+	sMux.HandleFunc("POST /api/users", apiCfg.handleCreateUser)
 	sMux.HandleFunc("GET /admin/metrics", apiCfg.handlerHits)
 	sMux.HandleFunc("POST /admin/reset", apiCfg.handlerReset)
-	sMux.HandleFunc("POST /api/validate_chirp", handleValidateChirp)
 
 	server := &http.Server{
 		Handler: sMux,
