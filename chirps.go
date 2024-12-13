@@ -5,16 +5,29 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
+	"webserver/internal/database"
+
+	"github.com/google/uuid"
 )
 
-func handleValidateChirp(resp http.ResponseWriter, req *http.Request) {
+type Chirp struct {
+	ID        uuid.UUID `json:"id"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+	Body      string    `json:"body"`
+	UserID    uuid.UUID `json:"user_id"`
+}
+
+func (cfg *apiConfig) handleNewChirp(resp http.ResponseWriter, req *http.Request) {
 
 	type parameters struct {
-		Body string `json:"body"`
+		Body   string    `json:"body"`
+		UserID uuid.UUID `json:"user_id"`
 	}
 
-	type returnVal struct {
-		CleanedBody string `json:"cleaned_body"`
+	type response struct {
+		Chirp
 	}
 
 	decoder := json.NewDecoder(req.Body)
@@ -30,12 +43,46 @@ func handleValidateChirp(resp http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if len(params.Body) > 140 {
-		respondWithError(resp, http.StatusBadRequest, "Chirp is too long", nil)
+	cleanedBody, err := validateChirp(resp, params.Body)
+	if err != nil {
 		return
 	}
 
-	words := strings.Split(params.Body, " ")
+	chirp, err := cfg.db.CreateChirp(
+		req.Context(),
+		database.CreateChirpParams{Body: cleanedBody, UserID: params.UserID},
+	)
+	if err != nil {
+		respondWithError(
+			resp,
+			http.StatusInternalServerError,
+			"Unable to create chirp",
+			nil,
+		)
+
+		return
+	}
+
+	respondWithJSON(resp, http.StatusCreated, response{
+		Chirp: Chirp{
+			ID:        chirp.ID,
+			CreatedAt: chirp.CreatedAt,
+			UpdatedAt: chirp.UpdatedAt,
+			Body:      chirp.Body,
+			UserID:    chirp.UserID,
+		},
+	})
+
+}
+
+func validateChirp(resp http.ResponseWriter, body string) (string, error) {
+
+	if len(body) > 140 {
+		respondWithError(resp, http.StatusBadRequest, "Chirp is too long", nil)
+		return "", fmt.Errorf("chirp too long: %d characters", len(body))
+	}
+
+	words := strings.Split(body, " ")
 	for i, word := range words {
 		switch strings.ToLower(word) {
 		case "kerfuffle", "sharbert", "fornax":
@@ -45,8 +92,6 @@ func handleValidateChirp(resp http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	respondWithJSON(
-		resp, http.StatusOK, returnVal{CleanedBody: strings.Join(words, " ")},
-	)
+	return strings.Join(words, " "), nil
 
 }
