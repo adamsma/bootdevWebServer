@@ -95,3 +95,32 @@ func validateChirp(resp http.ResponseWriter, body string) (string, error) {
 	return strings.Join(words, " "), nil
 
 }
+
+func (cfg *apiConfig) handleGetChirps(resp http.ResponseWriter, req *http.Request) {
+
+	chirps, err := cfg.db.GetChirps(req.Context())
+	if err != nil {
+		respondWithError(
+			resp,
+			http.StatusInternalServerError,
+			"Unable to retrieve chirps",
+			nil,
+		)
+
+		return
+	}
+
+	var returnChirps []Chirp
+	for _, chirp := range chirps {
+		returnChirps = append(returnChirps, Chirp{
+			ID:        chirp.ID,
+			CreatedAt: chirp.CreatedAt,
+			UpdatedAt: chirp.UpdatedAt,
+			Body:      chirp.Body,
+			UserID:    chirp.UserID,
+		})
+	}
+
+	respondWithJSON(resp, http.StatusOK, returnChirps)
+
+}
