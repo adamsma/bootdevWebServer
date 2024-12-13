@@ -46,7 +46,7 @@ func (cfg *apiConfig) handleCreateUser(resp http.ResponseWriter, req *http.Reque
 			resp,
 			http.StatusInternalServerError,
 			"Unable to create new users",
-			nil,
+			err,
 		)
 
 		return
