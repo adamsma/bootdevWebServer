@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/adamsma/webserver/internal/auth"
 	"github.com/adamsma/webserver/internal/database"
+	"github.com/google/uuid"
 )
 
 type User struct {
@@ -16,12 +16,13 @@ type User struct {
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 	Email     string    `json:"email"`
+	Passord   string    `json:"-"`
 }
 
 type Credentials struct {
-		Email string `json:"email"`
-		Password string `json:"password"`
-	}
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
 
 func (cfg *apiConfig) handleCreateUser(resp http.ResponseWriter, req *http.Request) {
 
@@ -56,14 +57,14 @@ func (cfg *apiConfig) handleCreateUser(resp http.ResponseWriter, req *http.Reque
 	}
 
 	user, err := cfg.db.CreateUser(
-		req.Context(), 
+		req.Context(),
 		database.CreateUserParams{Email: params.Email, HashedPassword: hash},
 	)
 	if err != nil {
 		respondWithError(
 			resp,
 			http.StatusInternalServerError,
-			"Unable to create new users",
+			"Unable to create new user",
 			err,
 		)
 
@@ -80,7 +81,7 @@ func (cfg *apiConfig) handleCreateUser(resp http.ResponseWriter, req *http.Reque
 	respondWithJSON(resp, http.StatusCreated, response{User: newUser})
 }
 
-func (cfg *apiConfig) handleLogin(resp http.ResponseWriter, req *http.Request){
+func (cfg *apiConfig) handleLogin(resp http.ResponseWriter, req *http.Request) {
 
 	type response struct {
 		User
@@ -96,16 +97,16 @@ func (cfg *apiConfig) handleLogin(resp http.ResponseWriter, req *http.Request){
 			"Couldn't decode parameters",
 			fmt.Errorf("error decoding parameters: %s", err),
 		)
-		
+
 		return
 	}
 
 	tgtUser, err := cfg.db.GetUserByEmail(req.Context(), params.Email)
 	if err != nil {
 		respondWithError(
-			resp, 
+			resp,
 			http.StatusNotFound,
-			"Unknown user",
+			"Invalid email or password",
 			fmt.Errorf(
 				"unable to retrieve user information (%s): %s", params.Email, err,
 			),
@@ -114,12 +115,12 @@ func (cfg *apiConfig) handleLogin(resp http.ResponseWriter, req *http.Request){
 		return
 	}
 
-	err = auth.CheckPasswordHash(params.Password, tgtUser.HashedPassword, )
+	err = auth.CheckPasswordHash(params.Password, tgtUser.HashedPassword)
 	if err != nil {
 		respondWithError(
-			resp, 
+			resp,
 			http.StatusUnauthorized,
-			"Invalid password or user",
+			"Invalid email or password",
 			fmt.Errorf(
 				"failed login attempt for (%s): %s", params.Email, err,
 			),
