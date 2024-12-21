@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strings"
 	"time"
-	"webserver/internal/database"
+	"github.com/adamsma/webserver/internal/database"
 
 	"github.com/google/uuid"
 )

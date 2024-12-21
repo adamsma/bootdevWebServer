@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"os"
 	"sync/atomic"
-	"webserver/internal/database"
+	"github.com/adamsma/webserver/internal/database"
 
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
@@ -53,6 +53,8 @@ func main() {
 	sMux.HandleFunc("GET /api/chirps/{chirpID}", apiCfg.handleGetChirpByID)
 
 	sMux.HandleFunc("POST /api/users", apiCfg.handleCreateUser)
+
+	sMux.HandleFunc("POST /api/login", apiCfg.handleLogin)
 
 	sMux.HandleFunc("GET /admin/metrics", apiCfg.handlerHits)
 	sMux.HandleFunc("POST /admin/reset", apiCfg.handlerReset)

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"sync/atomic"
-	"webserver/internal/database"
+	"github.com/adamsma/webserver/internal/database"
 )
 
 type apiConfig struct {
