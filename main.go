@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"sync/atomic"
+
 	"github.com/adamsma/webserver/internal/database"
 
 	"github.com/joho/godotenv"
@@ -32,10 +33,16 @@ func main() {
 		log.Fatal("PLATFORM must be set")
 	}
 
+	jwtSignSecret := os.Getenv("JWT_SIGN_SECRET")
+	if jwtSignSecret == "" {
+		log.Fatal("JWT_SIGN_SECRET must be set")
+	}
+
 	apiCfg := apiConfig{
 		fileserverHits: atomic.Int32{},
 		db:             database.New(dbConn),
 		env:            platform,
+		secret:         jwtSignSecret,
 	}
 
 	sMux := http.NewServeMux()

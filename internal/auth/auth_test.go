@@ -1,6 +1,9 @@
 package auth
 
 import (
+	"fmt"
+	"net/http"
+	"strings"
 	"testing"
 	"time"
 
@@ -207,6 +210,53 @@ func TestTokenCreateAndValidate(t *testing.T) {
 
 		if idJWT1 != idJWT2 {
 			t.Errorf("user ID claims should match - id1: %v, id2: %v", idJWT1, idJWT2)
+		}
+	})
+
+}
+
+func TestGetBearerToken(t *testing.T) {
+
+	req, err := http.NewRequest("GET", "http://example.com", nil)
+	if err != nil {
+		t.Error("error in creating new http request")
+	}
+
+	t.Run("Missing Authorization", func(t *testing.T) {
+		_, err := GetBearerToken(req.Header)
+		if !strings.Contains(fmt.Sprint(err), "no authorization header found") {
+			t.Error("missing header  should result in error")
+		}
+	})
+
+	req.Header.Set("Authorization", "Bearer token123")
+	t.Run("Valid Bearer Token", func(t *testing.T) {
+		token, err := GetBearerToken(req.Header)
+		if err != nil {
+			t.Errorf("Error extracting bearer token: %v", err)
+		}
+		if token != "token123" {
+			t.Errorf("expected: 'token123', actual: '%s'", token)
+		}
+	})
+
+	jwtExample := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJjaGlycHkiLCJzdWIiOiI4Mjk2MjQ3Mi04Yzk3LTQyYzktYjc3Yy1mYjcwMGY2YTE4MWYiLCJleHAiOjE3MzQ5MDQ0NzksImlhdCI6MTczNDkwMDg3OX0.9VVeJR1mB4bKp1TRxinfwy64sXoApAW7H6j5CE-TPZ8"
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", jwtExample))
+	t.Run("Valid Bearer JWT", func(t *testing.T) {
+		token, err := GetBearerToken(req.Header)
+		if err != nil {
+			t.Errorf("Error extracting bearer token: %v", err)
+		}
+		if token != jwtExample {
+			t.Errorf("expected: '%s', actual: '%s'", jwtExample, token)
+		}
+	})
+
+	req.Header.Set("Authorization", "Basic user:password")
+	t.Run("Invalid Authorization Type", func(t *testing.T) {
+		_, err := GetBearerToken(req.Header)
+		if !strings.Contains(fmt.Sprint(err), "invalid authorization type") {
+			t.Error("Incorrect authorization type should result in error")
 		}
 	})
 
