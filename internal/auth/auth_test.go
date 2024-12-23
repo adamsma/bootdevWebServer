@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/google/uuid"
 )
@@ -72,8 +71,6 @@ func TestTokenCreateAndValidate(t *testing.T) {
 	id2 := uuid.New()
 	secret1 := "realsecret"
 	secret2 := "anotherSecret"
-	futureExpire := time.Hour
-	negExpire, _ := time.ParseDuration("-1h")
 
 	var tokenId1Sec1, expiredToken, tokenId2Sec1, tokenId1Sec2 string
 
@@ -81,7 +78,6 @@ func TestTokenCreateAndValidate(t *testing.T) {
 		name      string
 		id        uuid.UUID
 		secret    string
-		expiry    time.Duration
 		saveToken *string
 		wantErr   bool
 	}{
@@ -89,7 +85,6 @@ func TestTokenCreateAndValidate(t *testing.T) {
 			name:      "Create Valid Token",
 			id:        id1,
 			secret:    secret1,
-			expiry:    futureExpire,
 			saveToken: &tokenId1Sec1,
 			wantErr:   false,
 		},
@@ -97,7 +92,6 @@ func TestTokenCreateAndValidate(t *testing.T) {
 			name:      "Create Valid Token 2",
 			id:        id2,
 			secret:    secret1,
-			expiry:    futureExpire,
 			saveToken: &tokenId2Sec1,
 			wantErr:   false,
 		},
@@ -105,23 +99,14 @@ func TestTokenCreateAndValidate(t *testing.T) {
 			name:      "Create Valid Token 3",
 			id:        id1,
 			secret:    secret2,
-			expiry:    futureExpire,
 			saveToken: &tokenId1Sec2,
-			wantErr:   false,
-		},
-		{
-			name:      "Create Expired Token",
-			id:        id1,
-			secret:    secret1,
-			expiry:    negExpire,
-			saveToken: &expiredToken,
 			wantErr:   false,
 		},
 	}
 
 	for _, test := range createTests {
 		t.Run(test.name, func(t *testing.T) {
-			token, err := MakeJWT(test.id, test.secret, test.expiry)
+			token, err := MakeJWT(test.id, test.secret)
 			if (err != nil) != test.wantErr {
 				t.Errorf("Make JWT error == %v, expected %v", err, test.wantErr)
 			}

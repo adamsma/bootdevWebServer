@@ -63,6 +63,9 @@ func main() {
 
 	sMux.HandleFunc("POST /api/login", apiCfg.handleLogin)
 
+	sMux.HandleFunc("POST /api/refresh", apiCfg.handlerRefreshToken)
+	sMux.HandleFunc("POST /api/revoke", apiCfg.handlerRevokeRefresh)
+
 	sMux.HandleFunc("GET /admin/metrics", apiCfg.handlerHits)
 	sMux.HandleFunc("POST /admin/reset", apiCfg.handlerReset)
 

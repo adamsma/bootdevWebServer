@@ -85,7 +85,8 @@ func (cfg *apiConfig) handleCreateUser(resp http.ResponseWriter, req *http.Reque
 func (cfg *apiConfig) handleLogin(resp http.ResponseWriter, req *http.Request) {
 
 	type response struct {
-		Token string `json:"token"`
+		AccessToken  string `json:"token"`
+		RefreshToken string `json:"refresh_token"`
 		User
 	}
 
@@ -101,12 +102,6 @@ func (cfg *apiConfig) handleLogin(resp http.ResponseWriter, req *http.Request) {
 		)
 
 		return
-	}
-
-	// validate expires_in_seconds parameter
-	expiry := time.Duration(params.ExpiresIn) * time.Second
-	if params.ExpiresIn <= 0 || expiry >= time.Hour {
-		expiry = time.Hour
 	}
 
 	tgtUser, err := cfg.db.GetUserByEmail(req.Context(), params.Email)
@@ -144,7 +139,7 @@ func (cfg *apiConfig) handleLogin(resp http.ResponseWriter, req *http.Request) {
 		Email:     tgtUser.Email,
 	}
 
-	accessToken, err := auth.MakeJWT(activeUser.ID, cfg.secret, expiry)
+	accessToken, err := auth.MakeJWT(activeUser.ID, cfg.secret)
 	if err != nil {
 		respondWithError(
 			resp,
@@ -156,5 +151,36 @@ func (cfg *apiConfig) handleLogin(resp http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	respondWithJSON(resp, http.StatusOK, response{User: activeUser, Token: accessToken})
+	refreshToken, err := auth.MakeRefreshToken()
+	if err != nil {
+		respondWithError(
+			resp,
+			http.StatusInternalServerError,
+			"Unable to generate refresh token",
+			err,
+		)
+
+		return
+	}
+
+	_, err = cfg.db.CreateRefreshToken(
+		req.Context(),
+		database.CreateRefreshTokenParams{Token: refreshToken, UserID: activeUser.ID},
+	)
+	if err != nil {
+		respondWithError(
+			resp,
+			http.StatusInternalServerError,
+			"Unable to generate refresh token",
+			err,
+		)
+
+		return
+	}
+
+	respondWithJSON(
+		resp,
+		http.StatusOK,
+		response{User: activeUser, AccessToken: accessToken, RefreshToken: refreshToken},
+	)
 }
