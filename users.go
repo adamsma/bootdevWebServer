@@ -20,8 +20,9 @@ type User struct {
 }
 
 type Credentials struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	Email     string        `json:"email"`
+	Password  string        `json:"password"`
+	ExpiresIn time.Duration `json:"expires_in_seconds"`
 }
 
 func (cfg *apiConfig) handleCreateUser(resp http.ResponseWriter, req *http.Request) {
@@ -84,6 +85,7 @@ func (cfg *apiConfig) handleCreateUser(resp http.ResponseWriter, req *http.Reque
 func (cfg *apiConfig) handleLogin(resp http.ResponseWriter, req *http.Request) {
 
 	type response struct {
+		Token string `json:"token"`
 		User
 	}
 
@@ -99,6 +101,12 @@ func (cfg *apiConfig) handleLogin(resp http.ResponseWriter, req *http.Request) {
 		)
 
 		return
+	}
+
+	// validate expires_in_seconds parameter
+	expiry := time.Duration(params.ExpiresIn) * time.Second
+	if params.ExpiresIn <= 0 || expiry >= time.Hour {
+		expiry = time.Hour
 	}
 
 	tgtUser, err := cfg.db.GetUserByEmail(req.Context(), params.Email)
@@ -136,5 +144,17 @@ func (cfg *apiConfig) handleLogin(resp http.ResponseWriter, req *http.Request) {
 		Email:     tgtUser.Email,
 	}
 
-	respondWithJSON(resp, http.StatusOK, response{User: activeUser})
+	accessToken, err := auth.MakeJWT(activeUser.ID, cfg.secret, expiry)
+	if err != nil {
+		respondWithError(
+			resp,
+			http.StatusUnauthorized,
+			"Unable to generate authorization token",
+			err,
+		)
+
+		return
+	}
+
+	respondWithJSON(resp, http.StatusOK, response{User: activeUser, Token: accessToken})
 }

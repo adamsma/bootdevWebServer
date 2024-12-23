@@ -72,7 +72,7 @@ func TestTokenCreateAndValidate(t *testing.T) {
 	id2 := uuid.New()
 	secret1 := "realsecret"
 	secret2 := "anotherSecret"
-	futureExpire, _ := time.ParseDuration("1h")
+	futureExpire := time.Hour
 	negExpire, _ := time.ParseDuration("-1h")
 
 	var tokenId1Sec1, expiredToken, tokenId2Sec1, tokenId1Sec2 string
@@ -183,6 +183,13 @@ func TestTokenCreateAndValidate(t *testing.T) {
 		{
 			name:        "Incorrect Secret",
 			tokenString: tokenId1Sec1,
+			secret:      secret2,
+			id:          id1,
+			wantErr:     true,
+		},
+		{
+			name:        "Invalid Token",
+			tokenString: "invalid.token.string",
 			secret:      secret2,
 			id:          id1,
 			wantErr:     true,
