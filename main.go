@@ -58,6 +58,7 @@ func main() {
 	sMux.HandleFunc("POST /api/chirps", apiCfg.handleNewChirp)
 	sMux.HandleFunc("GET /api/chirps", apiCfg.handleGetChirps)
 	sMux.HandleFunc("GET /api/chirps/{chirpID}", apiCfg.handleGetChirpByID)
+	sMux.HandleFunc("DELETE /api/chirps/{chirpID}", apiCfg.handleDeleteChirp)
 
 	sMux.HandleFunc("POST /api/users", apiCfg.handleCreateUser)
 	sMux.HandleFunc("PUT /api/users", apiCfg.handleUpdateUser)
