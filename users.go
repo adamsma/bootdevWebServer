@@ -184,3 +184,97 @@ func (cfg *apiConfig) handleLogin(resp http.ResponseWriter, req *http.Request) {
 		response{User: activeUser, AccessToken: accessToken, RefreshToken: refreshToken},
 	)
 }
+
+func (cfg *apiConfig) handleUpdateUser(resp http.ResponseWriter, req *http.Request) {
+
+	type response struct {
+		User
+	}
+
+	authToken, err := auth.GetBearerToken(req.Header)
+	if err != nil {
+		respondWithError(
+			resp,
+			http.StatusUnauthorized,
+			"Invalid credentials",
+			err,
+		)
+		return
+	}
+
+	userID, err := auth.ValidateJWT(authToken, cfg.secret)
+	if err != nil {
+		respondWithError(
+			resp,
+			http.StatusUnauthorized,
+			"Invalid credentials",
+			err,
+		)
+		return
+	}
+
+	decoder := json.NewDecoder(req.Body)
+	params := Credentials{}
+	err = decoder.Decode(&params)
+	if err != nil {
+		respondWithError(
+			resp,
+			http.StatusInternalServerError,
+			"Couldn't decode parameters",
+			fmt.Errorf("error decoding parameters: %s", err),
+		)
+
+		return
+	}
+
+	if params.Email == "" || params.Password == "" {
+		respondWithError(
+			resp,
+			http.StatusForbidden,
+			"Missing required parameter(s): email and password",
+			fmt.Errorf("required parameter(s) missing: %s", err),
+		)
+
+		return
+	}
+
+	hash, err := auth.HashPassword(params.Password)
+	if err != nil {
+		respondWithError(
+			resp,
+			http.StatusInternalServerError,
+			"Unable to update user info",
+			fmt.Errorf("error hashing password (%s): %s", params.Password, err),
+		)
+
+		return
+	}
+
+	updateParams := database.UpdateUserInfoParams{
+		Email:          params.Email,
+		HashedPassword: hash,
+		ID:             userID,
+	}
+
+	user, err := cfg.db.UpdateUserInfo(req.Context(), updateParams)
+	if err != nil {
+		respondWithError(
+			resp,
+			http.StatusInternalServerError,
+			"Unable to update user info",
+			err,
+		)
+
+		return
+	}
+
+	updatedUser := User{
+		ID:        user.ID,
+		CreatedAt: user.CreatedAt,
+		UpdatedAt: user.UpdatedAt,
+		Email:     user.Email,
+	}
+
+	respondWithJSON(resp, http.StatusOK, response{User: updatedUser})
+
+}

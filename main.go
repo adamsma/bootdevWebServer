@@ -60,6 +60,7 @@ func main() {
 	sMux.HandleFunc("GET /api/chirps/{chirpID}", apiCfg.handleGetChirpByID)
 
 	sMux.HandleFunc("POST /api/users", apiCfg.handleCreateUser)
+	sMux.HandleFunc("PUT /api/users", apiCfg.handleUpdateUser)
 
 	sMux.HandleFunc("POST /api/login", apiCfg.handleLogin)
 
