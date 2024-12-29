@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"slices"
 	"strings"
 	"time"
 
@@ -159,6 +160,13 @@ func (cfg *apiConfig) handleGetChirps(resp http.ResponseWriter, req *http.Reques
 			UpdatedAt: chirp.UpdatedAt,
 			Body:      chirp.Body,
 			UserID:    chirp.UserID,
+		})
+	}
+
+	sort := req.URL.Query().Get("sort")
+	if sort == "desc" {
+		slices.SortFunc(returnChirps, func(i, j Chirp) int {
+			return j.CreatedAt.Compare(i.CreatedAt)
 		})
 	}
 
