@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -121,7 +122,24 @@ func validateChirp(resp http.ResponseWriter, body string) (string, error) {
 
 func (cfg *apiConfig) handleGetChirps(resp http.ResponseWriter, req *http.Request) {
 
-	chirps, err := cfg.db.GetChirps(req.Context())
+	author := req.URL.Query().Get("author_id")
+	var fx func(ctx context.Context) ([]database.Chirp, error)
+	if author == "" {
+		fx = cfg.db.GetChirps
+	} else {
+
+		authorID, err := uuid.Parse(author)
+		if err != nil {
+			respondWithError(resp, http.StatusBadRequest, "Invalid author ID", err)
+			return
+		}
+
+		fx = func(ctx context.Context) ([]database.Chirp, error) {
+			return cfg.db.GetChirpsByAuthor(ctx, authorID)
+		}
+	}
+
+	chirps, err := fx(req.Context())
 	if err != nil {
 		respondWithError(
 			resp,

@@ -13,6 +13,7 @@ type apiConfig struct {
 	db             *database.Queries
 	env            string
 	secret         string
+	paymentKey     string
 }
 
 func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {

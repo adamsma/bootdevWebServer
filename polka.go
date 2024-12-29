@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/adamsma/webserver/internal/auth"
 	"github.com/adamsma/webserver/internal/database"
 	"github.com/google/uuid"
 )
@@ -20,9 +21,30 @@ func (cfg *apiConfig) handlePolkaWebhook(resp http.ResponseWriter, req *http.Req
 		} `json:"data"`
 	}
 
+	apiKey, err := auth.GetAPIKey(req.Header)
+	if err != nil {
+		respondWithError(
+			resp,
+			http.StatusUnauthorized,
+			"Invalid credentials",
+			err,
+		)
+		return
+	}
+
+	if apiKey != cfg.paymentKey {
+		respondWithError(
+			resp,
+			http.StatusUnauthorized,
+			"Invalid credentials",
+			err,
+		)
+		return
+	}
+
 	decoder := json.NewDecoder(req.Body)
 	params := parameters{}
-	err := decoder.Decode(&params)
+	err = decoder.Decode(&params)
 	if err != nil {
 		respondWithError(
 			resp,

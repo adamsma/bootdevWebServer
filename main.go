@@ -38,11 +38,17 @@ func main() {
 		log.Fatal("JWT_SIGN_SECRET must be set")
 	}
 
+	polkaKey := os.Getenv("POLKA_KEY")
+	if jwtSignSecret == "" {
+		log.Fatal("POLKA_KEY must be set")
+	}
+
 	apiCfg := apiConfig{
 		fileserverHits: atomic.Int32{},
 		db:             database.New(dbConn),
 		env:            platform,
 		secret:         jwtSignSecret,
+		paymentKey:     polkaKey,
 	}
 
 	sMux := http.NewServeMux()
