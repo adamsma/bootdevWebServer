@@ -12,11 +12,12 @@ import (
 )
 
 type User struct {
-	ID        uuid.UUID `json:"id"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-	Email     string    `json:"email"`
-	Passord   string    `json:"-"`
+	ID          uuid.UUID `json:"id"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+	Email       string    `json:"email"`
+	Passord     string    `json:"-"`
+	IsChirpyRed bool      `json:"is_chirpy_red"`
 }
 
 type Credentials struct {
@@ -73,10 +74,11 @@ func (cfg *apiConfig) handleCreateUser(resp http.ResponseWriter, req *http.Reque
 	}
 
 	newUser := User{
-		ID:        user.ID,
-		CreatedAt: user.CreatedAt,
-		UpdatedAt: user.UpdatedAt,
-		Email:     user.Email,
+		ID:          user.ID,
+		CreatedAt:   user.CreatedAt,
+		UpdatedAt:   user.UpdatedAt,
+		Email:       user.Email,
+		IsChirpyRed: user.IsChirpyRed,
 	}
 
 	respondWithJSON(resp, http.StatusCreated, response{User: newUser})
@@ -133,10 +135,11 @@ func (cfg *apiConfig) handleLogin(resp http.ResponseWriter, req *http.Request) {
 	}
 
 	activeUser := User{
-		ID:        tgtUser.ID,
-		CreatedAt: tgtUser.CreatedAt,
-		UpdatedAt: tgtUser.UpdatedAt,
-		Email:     tgtUser.Email,
+		ID:          tgtUser.ID,
+		CreatedAt:   tgtUser.CreatedAt,
+		UpdatedAt:   tgtUser.UpdatedAt,
+		Email:       tgtUser.Email,
+		IsChirpyRed: tgtUser.IsChirpyRed,
 	}
 
 	accessToken, err := auth.MakeJWT(activeUser.ID, cfg.secret)
@@ -269,10 +272,11 @@ func (cfg *apiConfig) handleUpdateUser(resp http.ResponseWriter, req *http.Reque
 	}
 
 	updatedUser := User{
-		ID:        user.ID,
-		CreatedAt: user.CreatedAt,
-		UpdatedAt: user.UpdatedAt,
-		Email:     user.Email,
+		ID:          user.ID,
+		CreatedAt:   user.CreatedAt,
+		UpdatedAt:   user.UpdatedAt,
+		Email:       user.Email,
+		IsChirpyRed: user.IsChirpyRed,
 	}
 
 	respondWithJSON(resp, http.StatusOK, response{User: updatedUser})
